@@ -1,40 +1,44 @@
 from flask import Flask, request, jsonify
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
+from transformers import RobertaForSequenceClassification, RobertaTokenizer, pipeline
+from deep_translator import GoogleTranslator
 
-# Initialize Flask app
+# Initialize Flask
 app = Flask(__name__)
 
-# Load CardiffNLP Twitter RoBERTa model
+# Load CardiffNLP RoBERTa model (sentiment)
 MODEL_NAME = "cardiffnlp/twitter-roberta-base-sentiment"
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
+tokenizer = RobertaTokenizer.from_pretrained(MODEL_NAME)
+model = RobertaForSequenceClassification.from_pretrained(MODEL_NAME)
+nlp_pipeline = pipeline("sentiment-analysis", model=model, tokenizer=tokenizer)
 
-# Sentiment pipeline
-sentiment_pipeline = pipeline(
-    "sentiment-analysis",
-    model=model,
-    tokenizer=tokenizer
-)
+@app.route("/sentiment", methods=["POST"])
+def sentiment():
+    data = request.get_json()
+    text = data.get("text", "")
 
-@app.route("/")
-def home():
-    return "RoBERTa Sentiment API is running!"
+    if not text:
+        return jsonify({"error": "No text provided"}), 400
 
-@app.route("/predict", methods=["POST"])
-def predict():
-    data = request.json
-    if not data or "text" not in data:
-        return jsonify({"error": "Please provide text in JSON payload"}), 400
+    # Translate Tagalog (or any language) to English
+    translated_text = GoogleTranslator(source='auto', target='en').translate(text)
 
-    text = data["text"]
-    result = sentiment_pipeline(text)
+    # Run sentiment analysis
+    result = nlp_pipeline(translated_text)[0]
 
-    # Format result as label + score
-    response = [{"label": r["label"], "score": float(r["score"])} for r in result]
-    return jsonify(response)
+    # Map CardiffNLP labels
+    labels_map = {"LABEL_0": "negative", "LABEL_1": "neutral", "LABEL_2": "positive"}
+    sentiment_result = {
+        "label": labels_map.get(result["label"], result["label"]),
+        "score": float(result["score"]),
+        "original_text": text,
+        "translated_text": translated_text
+    }
+    return jsonify(sentiment_result)
+
+# Health check
+@app.route("/", methods=["GET"])
+def index():
+    return "CardiffNLP Sentiment API with Tagalog Support!"
 
 if __name__ == "__main__":
-    # Railway uses PORT environment variable
-    import os
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=5000)

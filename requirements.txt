@@ -1,28 +1,16 @@
-# Core Transformers & Tokenizers
+# Transformers & Tokenizers
 transformers==4.44.2
 tokenizers==0.19.0
 
-# PyTorch (CPU version, compatible with transformers 4.44.2)
-torch==2.2.0
-
-# Scientific computing
-numpy==1.25.0
+# Torch CPU version (smallest)
+torch==2.2.0+cpu
 
 # Translation
 deep-translator==1.10.1
 
-# Optional but recommended
-sentencepiece==0.1.99
-
 # Web framework
 Flask==2.3.3
 
-# Utilities required by transformers
-regex!=2019.12.17
-pyyaml>=5.1
-requests
-tqdm>=4.27
-filelock
-packaging>=20.0
-safetensors>=0.4.1
-huggingface-hub<1.0,>=0.23.2
+# Optional utilities
+sentencepiece==0.1.99
+numpy==1.25.0
