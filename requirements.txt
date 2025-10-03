@@ -2,23 +2,25 @@
 transformers==4.44.2
 tokenizers==0.19.0
 
-# Torch & NumPy
-torch==2.2.0
+# Torch CPU-only (smaller, deploy-friendly)
+torch==2.2.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+
+# Numerical computing
 numpy==1.25.0
 
-# Translation
+# Translation support
 deep-translator==1.10.1
 sentencepiece==0.1.99
 
 # Web server
 flask==2.3.3
 
-# Extras (for transformers & models)
+# Utilities
 regex!=2019.12.17
-pyyaml>=5.1
 requests
+tqdm>=4.27
+pyyaml>=5.1
 filelock
 packaging>=20.0
 safetensors>=0.4.1
-huggingface-hub>=0.23.2,<1.0
-tqdm>=4.27
+huggingface-hub<1.0,>=0.23.2
