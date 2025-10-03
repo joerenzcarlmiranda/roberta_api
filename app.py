@@ -1,30 +1,40 @@
 from flask import Flask, request, jsonify
-from transformers import RobertaForSequenceClassification, RobertaTokenizer, pipeline
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
 
+# Initialize Flask app
 app = Flask(__name__)
 
-# Load the pre-trained CardiffNLP Twitter RoBERTa model
+# Load CardiffNLP Twitter RoBERTa model
 MODEL_NAME = "cardiffnlp/twitter-roberta-base-sentiment"
-tokenizer = RobertaTokenizer.from_pretrained(MODEL_NAME)
-model = RobertaForSequenceClassification.from_pretrained(MODEL_NAME)
-sentiment_pipeline = pipeline("sentiment-analysis", model=model, tokenizer=tokenizer)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
 
+# Sentiment pipeline
+sentiment_pipeline = pipeline(
+    "sentiment-analysis",
+    model=model,
+    tokenizer=tokenizer
+)
 
 @app.route("/")
 def home():
-    return "Roberta Sentiment API is running!"
-
+    return "RoBERTa Sentiment API is running!"
 
 @app.route("/predict", methods=["POST"])
 def predict():
     data = request.json
-    if "text" not in data:
-        return jsonify({"error": "No text provided"}), 400
+    if not data or "text" not in data:
+        return jsonify({"error": "Please provide text in JSON payload"}), 400
 
     text = data["text"]
     result = sentiment_pipeline(text)
-    return jsonify(result)
 
+    # Format result as label + score
+    response = [{"label": r["label"], "score": float(r["score"])} for r in result]
+    return jsonify(response)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    # Railway uses PORT environment variable
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
